@@ -27,6 +27,10 @@ public class FlappyBirdGame extends ApplicationAdapter {
     private Texture background;
     private Texture flappyBird1;
     private Texture flappyBird2;
+    private Texture facilBtn;
+    private Texture facilBtnPressed;
+    private Texture dificilBtn;
+    private Texture dificilBtnPressed;
 
     private Texture gameOverTexture;
 
@@ -35,10 +39,12 @@ public class FlappyBirdGame extends ApplicationAdapter {
     private ArrayList<Texture> bottomPipes;
     private ArrayList<Integer> alturaBottomPipes;
     private ArrayList<Integer> posicionX_pipes;
+    private ArrayList<Texture> botonesDificil;
+    private ArrayList<Texture> botonesFacil;
 
     private int estadoFlappy;
 
-    private final float GRAVEDAD = 10;
+    private float GRAVEDAD = 10;
 
     private int posicionX_inicial;
     private int posicionY;
@@ -70,6 +76,15 @@ public class FlappyBirdGame extends ApplicationAdapter {
     private Sound jumpingAudio;
     private Sound gameOverSound;
 
+    private boolean estadoDificultad;
+    private String textoDificultad;
+    private BitmapFont dificultadBitmap;
+
+    int anchoBotonesDificultad;
+
+    int estadoBotonDificil;
+    int estadoBotonFacil;
+
 	
 	@Override
 	public void create () {
@@ -81,11 +96,23 @@ public class FlappyBirdGame extends ApplicationAdapter {
 		bottomPipesRectangules = new ArrayList<Rectangle>();
 		topPipesRectangules = new ArrayList<Rectangle>();
 		posicionX_pipes = new ArrayList<Integer>();
+		botonesFacil = new ArrayList<Texture>();
+		botonesDificil = new ArrayList<Texture>();
 
 		background = new Texture("bg.png");
 		flappyBird1 = new Texture("bird.png");
 		flappyBird2 = new Texture("bird2.png");
 		gameOverTexture = new Texture("game_over.png");
+		facilBtn = new Texture("minusbutton.png");
+		facilBtnPressed = new Texture("minusbuttonpressed.png");
+		dificilBtn = new Texture("plusbutton.png");
+		dificilBtnPressed = new Texture("plusbuttonpressed.png");
+
+		botonesDificil.add(dificilBtn);
+		botonesDificil.add(dificilBtnPressed);
+
+		botonesFacil.add(facilBtn);
+		botonesFacil.add(facilBtnPressed);
 
 		poblarArreglosPipes();
 		//poblarArreglosPipesRectangules();
@@ -132,12 +159,39 @@ public class FlappyBirdGame extends ApplicationAdapter {
 		jumpingAudio = Gdx.audio.newSound(Gdx.files.internal("jump.mp3"));
 		gameOverSound = Gdx.audio.newSound(Gdx.files.internal("over.mp3"));
 
+		estadoDificultad = false; // false indica facil
+		textoDificultad = "fácil";
+		dificultadBitmap = new BitmapFont();
+		dificultadBitmap.setColor(Color.WHITE);
+		dificultadBitmap.getData().setScale(8);
+
+		anchoBotonesDificultad = 250;
+		estadoBotonFacil = 1;
+		estadoBotonDificil = 0;
+
 	}
 
 	@Override
 	public void render () {
 		/*Gdx.gl.glClearColor(1, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);*/
+
+		if(estadoDificultad){
+			GRAVEDAD = 11;
+			velocidadMax = 50;
+			pipesGap = 390;
+			pipeVelocity = 12;
+			textoDificultad = "difícil";
+
+		} else {
+			GRAVEDAD = 10;
+			velocidadMax = 50;
+			pipesGap = 450;
+			pipeVelocity = 8;
+			textoDificultad = "fácil";
+
+		}
+
 		posicionX_pipeInicial -= pipeVelocity;
 
 		if(posicionX_pipes.get(0) < -bottomPipes.get(0).getWidth()){
@@ -158,21 +212,36 @@ public class FlappyBirdGame extends ApplicationAdapter {
             int posY_input = Gdx.input.getY();
             System.out.println(String.format("x: %s, y: %s", String.valueOf(posX_input), String.valueOf(posY_input)));
 
-			jumpingAudio.play();
-			if(!isJuegoPerdido){
-				velocidadBird = velocidadMax;
+            // verificando si presionó botones
+			if(posX_input > 120 && posX_input < 371
+					&& posY_input > 66 && posY_input < 316){
+				estadoBotonFacil = 1;
+				estadoBotonDificil = 0;
+				estadoDificultad = false;
+			} else if(posX_input > 716 && posX_input < 966
+					&& posY_input > 66 && posY_input < 316){
+				estadoBotonFacil = 0;
+				estadoBotonDificil = 1;
+				estadoDificultad = true;
 			} else {
-				isJuegoPerdido = false;
-				puntaje = 0;
-				velocidadBird = 0;
-				posicionX_pipeInicial = (int) Math.round(windowWidth * 0.75);
-				posicionX_pipes.clear();
-				establecerPosicionesIniciales();
+				jumpingAudio.play();
+				if(!isJuegoPerdido){
+					velocidadBird = velocidadMax;
+				} else {
+					isJuegoPerdido = false;
+					puntaje = 0;
+					velocidadBird = 0;
+					posicionX_pipeInicial = (int) Math.round(windowWidth * 0.75);
+					posicionX_pipes.clear();
+					establecerPosicionesIniciales();
 
-				alturaBottomPipes.clear();
-				establecerAlturasPipesAleatorias();
-				posicionY = (Gdx.graphics.getHeight()/2) - (flappyBird1.getHeight()/2);
+					alturaBottomPipes.clear();
+					establecerAlturasPipesAleatorias();
+					posicionY = (Gdx.graphics.getHeight()/2) - (flappyBird1.getHeight()/2);
+				}
 			}
+
+
 		}
 
 		if(verificarPasoEntrePipes()){
@@ -219,6 +288,12 @@ public class FlappyBirdGame extends ApplicationAdapter {
 			}
 
 			puntajeBitmap.draw(batch, String.valueOf(puntaje), posicionX_puntaje, posicionY_puntaje);
+			dificultadBitmap.draw(batch, textoDificultad, windowWidth - 400, posicionY_puntaje);
+			batch.draw(botonesFacil.get(estadoBotonFacil), facilBtn.getHeight() / 4, windowHeight - facilBtn.getHeight() * 0.65f, anchoBotonesDificultad,anchoBotonesDificultad);
+			batch.draw(botonesDificil.get(estadoBotonDificil), windowWidth - (3*dificilBtn.getWidth())/4, windowHeight - facilBtn.getHeight() * 0.65f, anchoBotonesDificultad, anchoBotonesDificultad);
+			System.out.println(String.format("Posicion X: %s, Posicion Y: %s", String.valueOf(windowWidth - (3*dificilBtn.getWidth())/4),
+					String.valueOf(windowHeight - facilBtn.getHeight() * 0.65f)));
+			//System.out.println(String.format("AnchoVentana: %s, AltoVentana: %s", String.valueOf(windowWidth), String.valueOf(windowHeight)));
 		}
 
 		batch.draw(birds.get(estadoFlappy), posicionX_inicial, posicionY );
