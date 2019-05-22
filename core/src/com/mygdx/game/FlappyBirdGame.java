@@ -334,6 +334,7 @@ public class FlappyBirdGame extends ApplicationAdapter {
 
         if(posicionY < 0) {
             posicionY = 0;
+            isJuegoPerdido = true;
         }
 
         reducirPosiciones();
